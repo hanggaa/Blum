@@ -79,21 +79,17 @@ def is_safe_to_click(point, bomb_contours, safety_margin=5):
             return False
     return True
 
-def detect_play_button(screenshot):
-    gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-
-    # Check if the template is larger than the screenshot region
-    if gray.shape[0] < template.shape[0] or gray.shape[1] < template.shape[1]:
-        template_resized = cv2.resize(template, (gray.shape[1], gray.shape[0]))
-        print(f"Resized template to: {template_resized.shape}")
-        res = cv2.matchTemplate(gray, template_resized, cv2.TM_CCOEFF_NORMED)
-    else:
-        res = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
+def detect_play_button(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    threshold = 0.8
-    loc = np.where(res >= threshold)
-    if len(loc[0]) > 0:
-        return (loc[1][0], loc[0][0])  # Return the top-left corner of the match
+    # Perform template matching
+    res = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    
+    # If the match is strong enough, return the center of the matched area
+    if max_val > 0.8:  # Adjust this threshold as needed
+        return (max_loc[0] + w // 2, max_loc[1] + h // 2)
+    
     return None
 
 def click_objects(region):
