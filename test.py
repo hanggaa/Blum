@@ -71,7 +71,7 @@ def detect_objects(image):
     
     return blue_filtered, green_filtered, bomb_filtered
 
-def is_safe_to_click(point, bomb_contours, safety_margin=20):  # Increased safety margin
+def is_safe_to_click(point, bomb_contours, safety_margin=200):  # Important
     for bomb in bomb_contours:
         x, y, w, h = cv2.boundingRect(bomb)
         if x - safety_margin <= point[0] <= x + w + safety_margin and \
@@ -103,7 +103,7 @@ def detect_play_button(image):
 
 def click_objects(region):
     global running
-    pyautogui.PAUSE = 0.1
+    pyautogui.PAUSE = 0.15 # Important
 
     # Calculate the center of the Play button based on the observed clicks
     play_button_x = 912 - region[0]  # Relative x-coordinate within the region
