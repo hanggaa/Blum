@@ -106,8 +106,8 @@ def click_objects(region):
     pyautogui.PAUSE = 0.15 # Important
 
     # Calculate the center of the Play button based on the observed clicks
-    play_button_x = 912 - region[0]  # Relative x-coordinate within the region
-    play_button_y = 630 - region[1]  # Relative y-coordinate within the region
+    play_button_x = 900 - region[0]  # Relative x-coordinate within the region
+    play_button_y = 620 - region[1]  # Relative y-coordinate within the region
 
     while running:
         if keyboard.is_pressed('q'):
