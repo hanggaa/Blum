@@ -82,20 +82,33 @@ def is_safe_to_click(point, bomb_contours, safety_margin=5):
 def detect_play_button(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
+    # Focus on a small area around where we expect the button to be
+    height, width = gray.shape
+    roi_y = int(height * 0.8)  # Start at 80% of the height
+    roi_height = height - roi_y
+    roi_x = int(width * 0.3)  # Start at 30% of the width
+    roi_width = int(width * 0.4)  # Use 40% of the width
+    
+    roi = gray[roi_y:roi_y+roi_height, roi_x:roi_x+roi_width]
+    
     # Perform template matching
-    res = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
+    res = cv2.matchTemplate(roi, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     
-    # If the match is strong enough, return the center of the matched area
+    # If the match is strong enough, return True
     if max_val > 0.8:  # Adjust this threshold as needed
-        return (max_loc[0] + w // 2, max_loc[1] + h // 2)
+        return True
     
-    return None
+    return False
 
 def click_objects(region):
     global running
-    pyautogui.PAUSE = 0.1  # Slightly increased pause between PyAutoGUI commands
-    
+    pyautogui.PAUSE = 0.1
+
+    # Calculate the center of the Play button based on the observed clicks
+    play_button_x = 912 - region[0]  # Relative x-coordinate within the region
+    play_button_y = 640 - region[1]  # Relative y-coordinate within the region
+
     while running:
         if keyboard.is_pressed('q'):
             running = False
@@ -106,10 +119,13 @@ def click_objects(region):
         screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
         
         # Check for Play button
-        play_button = detect_play_button(screenshot)
-        if play_button:
-            pyautogui.click(region[0] + play_button[0], region[1] + play_button[1])
-            print(f"Clicked Play button at ({region[0] + play_button[0]}, {region[1] + play_button[1]})")
+        if detect_play_button(screenshot):
+            # Use the pre-calculated Play button coordinates
+            click_x = region[0] + play_button_x
+            click_y = region[1] + play_button_y
+            
+            pyautogui.click(click_x, click_y)
+            print(f"Clicked Play button at ({click_x}, {click_y})")
             time.sleep(0.5)  # Wait for the game to restart
             continue
         
