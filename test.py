@@ -44,8 +44,8 @@ def detect_objects(image):
     green_mask = cv2.inRange(hsv, lower_green, upper_green)
     
     # Gray bomb objects
-    lower_gray = np.array([0, 0, 100])
-    upper_gray = np.array([180, 30, 220])
+    lower_gray = np.array([0, 0, 60])  # Lowered the lower bound
+    upper_gray = np.array([180, 60, 255])  # Increased the upper bound
     gray_mask = cv2.inRange(hsv, lower_gray, upper_gray)
     
     # Apply morphological operations to reduce noise
@@ -71,7 +71,7 @@ def detect_objects(image):
     
     return blue_filtered, green_filtered, bomb_filtered
 
-def is_safe_to_click(point, bomb_contours, safety_margin=5):
+def is_safe_to_click(point, bomb_contours, safety_margin=20):  # Increased safety margin
     for bomb in bomb_contours:
         x, y, w, h = cv2.boundingRect(bomb)
         if x - safety_margin <= point[0] <= x + w + safety_margin and \
@@ -131,6 +131,17 @@ def click_objects(region):
         
         blue_contours, green_contours, bomb_contours = detect_objects(screenshot)
         
+        # New function to check if a point is far enough from all bombs
+        def is_far_from_bombs(point, bomb_contours, min_distance=20):
+            for bomb in bomb_contours:
+                M = cv2.moments(bomb)
+                if M["m00"] != 0:
+                    bX = int(M["m10"] / M["m00"])
+                    bY = int(M["m01"] / M["m00"])
+                    if ((point[0] - bX) ** 2 + (point[1] - bY) ** 2) ** 0.5 < min_distance:
+                        return False
+            return True
+
         # Click blue objects first
         for contour in blue_contours:
             if not running:
@@ -139,11 +150,11 @@ def click_objects(region):
             if M["m00"] != 0:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
-                if is_safe_to_click((cX, cY), bomb_contours):
+                if is_safe_to_click((cX, cY), bomb_contours) and is_far_from_bombs((cX, cY), bomb_contours):
                     pyautogui.click(region[0] + cX, region[1] + cY)
                     print(f"Clicked blue object at ({region[0] + cX}, {region[1] + cY})")
                     time.sleep(0.02)  # Small delay between clicks
-        
+
         # Then click green objects
         for contour in green_contours:
             if not running:
@@ -152,7 +163,7 @@ def click_objects(region):
             if M["m00"] != 0:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
-                if is_safe_to_click((cX, cY), bomb_contours):
+                if is_safe_to_click((cX, cY), bomb_contours) and is_far_from_bombs((cX, cY), bomb_contours):
                     pyautogui.click(region[0] + cX, region[1] + cY)
                     print(f"Clicked green object at ({region[0] + cX}, {region[1] + cY})")
                     time.sleep(0.02)  # Small delay between clicks
